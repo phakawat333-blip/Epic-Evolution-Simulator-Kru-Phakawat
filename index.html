@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evolution Lab: Epic Scenarios - Kru Phakawat</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap');
+        
+        :root {
+            --bg-dark: #0f0f16; --panel-bg: #1a1a24;
+            --neon-green: #00f5d4; --neon-pink: #f15bb5;
+            --neon-blue: #00bbf9; --neon-yellow: #fee440;
+            --neon-purple: #9b5de5; --text-main: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background: var(--bg-dark); color: var(--text-main);
+            margin: 0; padding: 15px; overflow-x: hidden;
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header-title h1 { margin: 0; color: var(--neon-green); font-size: 2rem; text-shadow: 0 0 10px rgba(0,245,212,0.3); }
+        .header-title p { margin: 5px 0 0 0; color: #a0a0b0; font-size: 0.9rem; }
+        
+        .audio-btn {
+            background: #2a2a35; color: white; border: 2px solid #444;
+            padding: 10px 20px; border-radius: 30px; cursor: pointer;
+            font-family: 'Prompt'; font-weight: bold; transition: 0.3s;
+        }
+        .audio-btn.active { background: #e94560; border-color: #ff4757; box-shadow: 0 0 15px rgba(233,69,96,0.5); }
+
+        .container { display: grid; grid-template-columns: 360px 1fr; gap: 20px; max-width: 1400px; margin: 0 auto; }
+
+        .panel { background: var(--panel-bg); padding: 15px; border-radius: 15px; border: 1px solid #2a2a35; margin-bottom: 15px;}
+        .panel h3 { margin: 0 0 15px 0; color: var(--neon-yellow); border-bottom: 1px solid #333; padding-bottom: 10px; font-size: 1.1rem; }
+
+        /* Scenarios Buttons */
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .btn-scen {
+            background: #222230; color: #ccc; border: 1px solid #444; padding: 8px;
+            border-radius: 8px; font-family: 'Prompt'; font-size: 0.8rem; cursor: pointer; transition: 0.2s;
+        }
+        .btn-scen:hover, .btn-scen.active { background: var(--neon-blue); color: #000; font-weight: bold; border-color: var(--neon-blue); }
+
+        /* Speed Controls */
+        .speed-bar { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; margin-bottom: 15px;}
+        .speed-label { font-size: 0.85rem; color: #aaa; font-weight: bold;}
+        .btn-speed {
+            background: #222230; color: #ccc; border: 1px solid #444; padding: 5px 12px;
+            border-radius: 5px; cursor: pointer; font-family: 'Prompt'; font-weight: bold; transition: 0.2s;
+        }
+        .btn-speed.active { background: var(--neon-yellow); color: #000; border-color: var(--neon-yellow); }
+
+        /* Tooltip Style */
+        .tooltip { position: relative; cursor: help; color: var(--neon-green); border-bottom: 1px dashed var(--neon-green); font-weight: bold;}
+        .tooltip::after {
+            content: attr(data-tooltip); position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%);
+            background: #2a2a35; color: white; padding: 8px 12px; border-radius: 8px; white-space: nowrap;
+            font-size: 0.8rem; opacity: 0; pointer-events: none; transition: 0.2s; z-index: 100; border: 1px solid var(--neon-green);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-weight: normal;
+        }
+        .tooltip:hover::after { opacity: 1; }
+
+        .slider-group { margin-bottom: 15px; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px; color: var(--neon-green); font-weight: bold;}
+        input[type="range"] { width: 100%; accent-color: var(--neon-green); }
+
+        .info-box { background: rgba(0,245,212,0.05); padding: 15px; border-radius: 10px; border-left: 4px solid var(--neon-green); font-size: 0.85rem; line-height: 1.5; margin-bottom: 15px;}
+        .info-title { font-weight: bold; color: var(--neon-green); margin-bottom: 5px; font-size: 1rem;}
+        .info-example { margin-top: 10px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; color: #feca57; font-style: italic; }
+
+        /* Student Inputs */
+        .student-inputs input, .student-inputs textarea {
+            width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #222230; color: white;
+            font-family: 'Prompt'; margin-bottom: 10px; box-sizing: border-box; font-size: 0.85rem;
+        }
+        .student-inputs input:focus, .student-inputs textarea:focus { outline: none; border-color: var(--neon-green); }
+
+        .controls-grid { display: grid; grid-template-columns: 1fr; gap: 8px;}
+        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-family: 'Prompt'; cursor: pointer; transition: 0.2s; font-size: 1rem; display: flex; justify-content: center; align-items: center; gap: 8px;}
+        .btn-play { background: var(--neon-green); color: #000; }
+        .btn-reset { background: #444; color: white; }
+        .btn-export { background: #9b5de5; color: white; }
+
+        /* Main Area */
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+        .stat-card { background: var(--panel-bg); padding: 10px; border-radius: 12px; text-align: center; border: 1px solid #2a2a35; border-bottom: 3px solid #555; }
+        .stat-card h4 { margin: 0; font-size: 0.75rem; color: #aaa; }
+        .stat-card div { font-size: 1.5rem; font-weight: bold; margin-top: 5px; }
+
+        .sim-area { background: #08080c; border-radius: 15px; border: 2px solid #2a2a35; height: 300px; position: relative; overflow: hidden; box-shadow: inset 0 0 40px rgba(0,0,0,0.8); margin-bottom: 15px;}
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .chart-area { background: var(--panel-bg); padding: 15px; border-radius: 15px; border: 1px solid #2a2a35; height: 230px; }
+
+        .alert-box {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            background: rgba(233, 69, 96, 0.9); color: white; padding: 8px 20px;
+            border-radius: 20px; font-size: 0.9rem; font-weight: bold; display: none;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.6); z-index: 10;
+        }
+
+        /* สำหรับหน้า PDF */
+        #hiddenTableArea { display: none; }
+        table { page-break-inside: auto; }
+        tr { page-break-inside: avoid; page-break-after: auto; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-title">
+            <h1>🧬 Epic Evolution Simulator</h1>
+            <p>Interactive Population Genetics Lab | โดย ครูภควัต สองเมือง</p>
+        </div>
+        <button class="audio-btn" id="audioBtn" onclick="toggleAudio()"><i class="fas fa-volume-mute"></i> เปิดเสียงเอฟเฟกต์</button>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="panel">
+                <h3><i class="fas fa-tasks"></i> เลือกสถานการณ์</h3>
+                <div class="btn-grid">
+                    <button class="btn-scen active" onclick="setScenario(1)" id="btn-s1">1. สมดุล HWE</button>
+                    <button class="btn-scen" onclick="setScenario(2)" id="btn-s2">2. คัดเลือกโดยธรรมชาติ</button>
+                    <button class="btn-scen" onclick="setScenario(3)" id="btn-s3">3. ถ่ายเทยีน (อพยพ)</button>
+                    <button class="btn-scen" onclick="setScenario(4)" id="btn-s4">4. การกลายพันธุ์</button>
+                    <button class="btn-scen" onclick="setScenario(5)" id="btn-s5">5. Genetic Drift</button>
+                    <button class="btn-scen" onclick="setScenario(6)" id="btn-s6">6. เลือกคู่ผสมพันธุ์</button>
+                </div>
+
+                <div class="speed-bar">
+                    <span class="speed-label"><i class="fas fa-tachometer-alt"></i> ความเร็วเวลา:</span>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn-speed active" onclick="setSpeed(1, this)">x1</button>
+                        <button class="btn-speed" onclick="setSpeed(2, this)">x2</button>
+                        <button class="btn-speed" onclick="setSpeed(5, this)">x5</button>
+                    </div>
+                </div>
+                
+                <div class="slider-group">
+                    <label>👥 ประชากรเริ่มต้น (N) <span id="valN">400</span></label>
+                    <input type="range" id="initialN" min="20" max="500" value="400" oninput="updateInitialN(this.value)">
+                </div>
+
+                <div class="info-box">
+                    <div class="info-title" id="infoTitle">1. สมดุล <span class="tooltip" data-tooltip="ภาวะที่ความถี่แอลลีลคงที่เมื่อไม่มีปัจจัยรบกวน">HWE</span></div>
+                    <div id="infoDesc">ประชากรมีขนาดใหญ่ ไม่มีการกลายพันธุ์ อพยพ หรือคัดเลือก อัตราการเกิด/ตายสมดุลทำให้ความถี่แอลลีลคงที่ตลอดไป</div>
+                    <div class="info-example" id="infoEx">🎯 ตัวอย่าง: ฝูงปลาในทะเลสาบปิดขนาดใหญ่ที่ไม่มีผู้ล่าตามธรรมชาติและสิ่งแวดล้อมคงที่</div>
+                </div>
+
+                <div class="student-inputs">
+                    <input type="text" id="studentName" placeholder="👤 พิมพ์ชื่อ-สกุล เลขที่ ชั้น...">
+                    <textarea id="studentNote" placeholder="📝 สรุปผลการทดลองสั้นๆ ว่าเกิดอะไรขึ้นกับความถี่แอลลีล..."></textarea>
+                </div>
+
+                <div class="controls-grid">
+                    <button class="btn btn-play" id="playBtn" onclick="toggleSim()"><i class="fas fa-play"></i> เริ่มการจำลอง</button>
+                    <button class="btn btn-reset" onclick="resetSim()"><i class="fas fa-undo"></i> รีเซ็ตกระดาน</button>
+                    <button class="btn btn-export" onclick="exportData()"><i class="fas fa-file-pdf"></i> สร้างรายงาน (PDF)</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="stat-grid">
+                <div class="stat-card" style="border-color: #fff;"><h4>รุ่นที่ (GEN)</h4><div id="dispGen">0</div></div>
+                <div class="stat-card" style="border-color: var(--neon-pink);"><h4>p (แอลลีล A)</h4><div id="dispP" style="color:var(--neon-pink)">0.50</div></div>
+                <div class="stat-card" style="border-color: var(--neon-blue);"><h4>q (แอลลีล a)</h4><div id="dispQ" style="color:var(--neon-blue)">0.50</div></div>
+                <div class="stat-card" style="border-color: var(--neon-green);"><h4>r (แอลลีลใหม่)</h4><div id="dispR" style="color:var(--neon-green)">0.00</div></div>
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-card" style="border-color: var(--neon-pink); background: rgba(241, 91, 181, 0.05);"><h4>ประชากร AA (ชมพู)</h4><div id="countAA" style="color:var(--neon-pink)">0</div></div>
+                <div class="stat-card" style="border-color: var(--neon-purple); background: rgba(155, 93, 229, 0.05);"><h4>ประชากร Aa (ม่วง)</h4><div id="countAa" style="color:var(--neon-purple)">0</div></div>
+                <div class="stat-card" style="border-color: var(--neon-blue); background: rgba(0, 187, 249, 0.05);"><h4>ประชากร aa (ฟ้า)</h4><div id="countaa" style="color:var(--neon-blue)">0</div></div>
+                <div class="stat-card" style="border-color: var(--neon-green); background: rgba(0, 245, 212, 0.05);"><h4>ประชากร Mutant (เขียว)</h4><div id="countR" style="color:var(--neon-green)">0</div></div>
+            </div>
+
+            <div class="sim-area">
+                <div class="alert-box" id="alertBox">⚠️ แจ้งเตือนเหตุการณ์!</div>
+                <canvas id="simCanvas"></canvas>
+            </div>
+
+            <div class="chart-area">
+                <canvas id="statChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="hiddenTableArea">
+        <div id="pdfContent" style="padding: 20px; background: white; color: black; font-family: 'Prompt', sans-serif;">
+            <h2 style="text-align: center; color: #2c3e50; margin-bottom: 5px;">รายงานผลการจำลอง Population Genetics</h2>
+            <h4 id="pdfTitle" style="text-align: center; color: #7f8c8d; margin-top: 0; margin-bottom: 15px;">สถานการณ์: -</h4>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px;">
+                <p id="pdfStudentName" style="margin: 0 0 10px 0; font-weight: bold; font-size: 1.1rem; border-bottom: 1px solid #ccc; padding-bottom: 5px;">ชื่อ-สกุล: -</p>
+                <p id="pdfStudentNote" style="margin: 0; font-size: 0.95rem; color: #444;">สรุปผล: -</p>
+            </div>
+
+            <div id="pdfImages" style="margin-bottom: 20px; text-align: center;"></div>
+            
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; text-align: center; font-size: 0.9rem;" border="1">
+                <thead style="background: #34495e; color: white;">
+                    <tr>
+                        <th>รุ่น (Gen)</th>
+                        <th>p (A)</th><th>q (a)</th><th>r (Mutant)</th>
+                        <th>N รวม</th>
+                        <th>AA (ตัว)</th><th>Aa (ตัว)</th><th>aa (ตัว)</th><th>Mutant (ตัว)</th>
+                    </tr>
+                </thead>
+                <tbody id="pdfTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+    // ==========================================
+    // 1. ระบบเสียง
+    // ==========================================
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+    let isAudioEnabled = false;
+    let bgmInterval = null;
+
+    function toggleAudio() {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        isAudioEnabled = !isAudioEnabled;
+        const btn = document.getElementById('audioBtn');
+        if (isAudioEnabled) {
+            btn.innerHTML = '<i class="fas fa-volume-up"></i> ปิดเสียง';
+            btn.classList.add('active');
+            startBGM();
+        } else {
+            btn.innerHTML = '<i class="fas fa-volume-mute"></i> เปิดเสียงเอฟเฟกต์';
+            btn.classList.remove('active');
+            stopBGM();
+        }
+    }
+
+    function startBGM() {
+        if (!isAudioEnabled) return;
+        let tick = 0;
+        bgmInterval = setInterval(() => {
+            if(!isRunning) return; 
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(tick % 4 === 0 ? 100 : 80, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            tick++;
+        }, 500); 
+    }
+    function stopBGM() { clearInterval(bgmInterval); }
+
+    function playSFX(type) {
+        if (!isAudioEnabled || !audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        
+        if (type === 'birth') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'death') {
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+        } else if (type === 'alert') {
+            osc.type = 'square'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+        }
+    }
+
+    // ==========================================
+    // 2. ระบบจำลองสถานการณ์ & Timer
+    // ==========================================
+    let isRunning = false;
+    let currentScen = 1;
+    let gen = 0, p = 0.5, q = 0.5, r = 0.0, N = 400;
+    const dataLog = { gen: [], p: [], q: [], r: [], n: [], cAA: [], cAa: [], caa: [], cR: [] }; 
+    
+    // ระบบ Time Warp
+    let loopTimer = null;
+    let currentSpeed = 1000; // x1 = 1000ms
+
+    function setSpeed(multiplier, btnElement) {
+        document.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+        currentSpeed = 1000 / multiplier;
+        if(isRunning) {
+            clearInterval(loopTimer);
+            loopTimer = setInterval(stepGeneration, currentSpeed);
+        }
+    }
+
+    const ctxChart = document.getElementById('statChart').getContext('2d');
+    const statChart = new Chart(ctxChart, {
+        type: 'line',
+        data: {
+            labels: dataLog.gen,
+            datasets: [
+                { label: 'p (A)', data: dataLog.p, borderColor: '#f15bb5', borderWidth: 3, tension: 0.3, pointRadius: 2 },
+                { label: 'q (a)', data: dataLog.q, borderColor: '#00bbf9', borderWidth: 3, tension: 0.3, pointRadius: 2 },
+                { label: 'r (Mutant)', data: dataLog.r, borderColor: '#00f5d4', borderWidth: 3, tension: 0.3, pointRadius: 2 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 1 } }, animation: {duration: 0} }
+    });
+
+    const scenarios = {
+        1: { t: "1. สมดุล <span class='tooltip' data-tooltip='Hardy-Weinberg Equilibrium: ภาวะที่ความถี่แอลลีลคงที่เมื่อไม่มีปัจจัยรบกวน'>HWE</span>", d: "ประชากรมีขนาดใหญ่ ไม่มีการกลายพันธุ์ อพยพ หรือคัดเลือก อัตราการเกิด/ตายสมดุลทำให้ความถี่แอลลีลคงที่ตลอดไป", ex: "🎯 ตัวอย่าง: ฝูงปลาในทะเลสาบปิดขนาดใหญ่ที่ไม่มีผู้ล่าและสิ่งแวดล้อมคงที่", c: "#fff" },
+        2: { t: "2. การคัดเลือกโดยธรรมชาติ", d: "สิ่งแวดล้อมคัดเลือกลักษณะที่เหมาะสมกว่า ทำให้ลักษณะด้อย (aa) อ่อนแอและตายก่อนวัยเจริญพันธุ์ กราฟ q จึงลดลง", ex: "🎯 ตัวอย่าง: นกนักล่ามองเห็นและจับแมลงปีกสีสว่าง (aa) กินได้ง่ายกว่าในป่าทึบ", c: "#ff4757" },
+        3: { t: "3. <span class='tooltip' data-tooltip='Gene Flow: การเคลื่อนย้ายยีนระหว่างกลุ่มประชากร'>ถ่ายเทยีน (Gene Flow)</span>", d: "มีการอพยพย้ายถิ่น นำแอลลีลลักษณะด้อย (a) จากกลุ่มอื่นเข้ามาผสมปนเปอย่างต่อเนื่อง ทำให้กราฟ q พุ่งสูงขึ้น", ex: "🎯 ตัวอย่าง: ฝูงนกอพยพจากเกาะอื่นบินเข้ามาผสมพันธุ์กับนกเจ้าถิ่นอย่างต่อเนื่อง", c: "#00bbf9" },
+        4: { t: "4. การกลายพันธุ์ (รหัสใหม่ r)", d: "ในช่วงแรกไม่มีการกลายพันธุ์ จนกระทั่งรุ่นที่ 5 เกิดความผิดพลาดทาง DNA สร้างแอลลีลชนิดใหม่ (สีเขียว-r) ที่แข็งแกร่งกว่า", ex: "🎯 ตัวอย่าง: แบคทีเรียเกิดการกลายพันธุ์สร้างยีนที่ต้านทานยาปฏิชีวนะได้", c: "#00f5d4" },
+        5: { t: "5. <span class='tooltip' data-tooltip='Genetic Drift: การเปลี่ยนแปลงความถี่ยีนแบบสุ่ม มักเกิดเมื่อประชากรมีขนาดเล็กลงอย่างฉับพลัน'>Genetic Drift</span> (ขวดโหล)", d: "ภัยพิบัติทำให้ประชากรลดฮวบแบบสุ่ม ยีนของผู้รอดชีวิตกลุ่มเล็กๆ จะแกว่งตัวแบบไร้ทิศทาง (Bottleneck Effect)", ex: "🎯 ตัวอย่าง: ภูเขาไฟระเบิดทำลายสิ่งมีชีวิตหายไป 95% เหลือรอดเพียงไม่กี่ตัว", c: "#fee440" },
+        6: { t: "6. การเลือกคู่ผสมพันธุ์ (Sexual Selection)", d: "ประชากรเลือกคู่โดยเจาะจงแอลลีลใดแอลลีลหนึ่ง ทำให้แอลลีลที่ไม่ถูกเลือก (a สีฟ้า) ไม่มีโอกาสสืบพันธุ์และลดจำนวนลง", ex: "🎯 ตัวอย่าง: นกตัวเมียเลือกผสมพันธุ์เฉพาะกับตัวผู้ที่มีขนสีชมพู (A) เท่านั้น", c: "#9b5de5" }
+    };
+
+    // ==========================================
+    // 3. ระบบ Canvas & นับจำนวนประชากร
+    // ==========================================
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    let slimes = [];
+    let icons = [];
+
+    function resize() { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
+    window.addEventListener('resize', resize); resize();
+
+    class Icon {
+        constructor(char, x, y, color) {
+            this.char = char; this.x = x; this.y = y; this.timer = 50; this.color = color;
+        }
+        draw() {
+            ctx.fillStyle = this.color; ctx.font = '18px Arial'; ctx.globalAlpha = this.timer/50;
+            ctx.fillText(this.char, this.x - 9, this.y);
+            this.y -= 0.5; this.timer--; ctx.globalAlpha = 1;
+        }
+    }
+
+    class Slime {
+        constructor(type) {
+            this.type = type;
+            this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+            this.targetX = this.x; this.targetY = this.y;
+            this.scale = 0; this.state = 'entering'; 
+            this.speed = 0.01 + Math.random() * 0.01; 
+            
+            if(type === 'R') this.color = '#00f5d4'; 
+            else if(type === 'AA') this.color = '#f15bb5'; 
+            else if(type === 'Aa') this.color = '#9b5de5'; 
+            else this.color = '#00bbf9'; 
+        }
+        update() {
+            if (this.state === 'entering') {
+                this.scale += 0.1; if(this.scale >= 1) { this.scale = 1; this.state = 'alive'; }
+            } else if (this.state === 'dying') {
+                this.scale -= 0.15;
+            } else {
+                this.x += (this.targetX - this.x) * this.speed;
+                this.y += (this.targetY - this.y) * this.speed;
+                if (Math.abs(this.x - this.targetX) < 2) {
+                    this.targetX = Math.max(10, Math.min(canvas.width - 10, this.x + (Math.random() - 0.5) * 40));
+                    this.targetY = Math.max(10, Math.min(canvas.height - 10, this.y + (Math.random() - 0.5) * 40));
+                }
+            }
+        }
+        draw() {
+            if(this.scale <= 0) return;
+            ctx.save(); ctx.translate(this.x, this.y); ctx.scale(this.scale, this.scale);
+            ctx.fillStyle = this.color;
+            ctx.beginPath(); ctx.arc(0, 0, 6, Math.PI, 0); ctx.lineTo(6, 3); ctx.quadraticCurveTo(0, 6, -6, 3); ctx.fill();
+            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(-2, -1, 1.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(2, -1, 1.5, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    function updateInitialN(val) {
+        if(!isRunning && gen === 0) {
+            N = parseInt(val);
+            document.getElementById('valN').innerText = N;
+            updatePopulationCounts();
+            syncVisuals();
+        }
+    }
+
+    function setScenario(id) {
+        currentScen = id;
+        document.querySelectorAll('.btn-scen').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-s'+id).classList.add('active');
+        document.getElementById('infoTitle').innerHTML = scenarios[id].t;
+        document.getElementById('infoTitle').style.color = scenarios[id].c;
+        document.getElementById('infoDesc').innerText = scenarios[id].d;
+        document.getElementById('infoEx').innerText = scenarios[id].ex;
+        document.querySelector('.info-box').style.borderLeftColor = scenarios[id].c;
+        
+        if(id === 5) { document.getElementById('initialN').value = 400; N = 400; }
+        resetSim();
+    }
+
+    // ฟังก์ชันใหม่: อัปเดตและแสดงจำนวนประชากรแบบตัวเป็นๆ (N)
+    function updatePopulationCounts() {
+        let ratioAA = (p*p); let ratioAa = 2*p*q; let ratioaa = (q*q); let ratioR = r; 
+        let sum = ratioAA + ratioAa + ratioaa + ratioR;
+        if(sum > 0) { ratioAA/=sum; ratioAa/=sum; ratioaa/=sum; ratioR/=sum; }
+
+        let realAA = Math.round(N * ratioAA);
+        let realAa = Math.round(N * ratioAa);
+        let realaa = Math.round(N * ratioaa);
+        let realR = N - realAA - realAa - realaa; // เก็บเศษที่เหลือ
+
+        // หาก r เป็น 0 ป้องกันไม่ให้มีติ่งประชากรโผล่มา
+        if(r === 0) { realR = 0; realaa = N - realAA - realAa; }
+
+        document.getElementById('countAA').innerText = realAA;
+        document.getElementById('countAa').innerText = realAa;
+        document.getElementById('countaa').innerText = realaa;
+        document.getElementById('countR').innerText = realR;
+        
+        return { cAA: realAA, cAa: realAa, caa: realaa, cR: realR };
+    }
+
+    function syncVisuals() {
+        let maxVis = Math.min(N, 200); 
+        let ratioAA = (p*p); let ratioAa = 2*p*q; let ratioaa = (q*q); let ratioR = r; 
+        let sum = ratioAA + ratioAa + ratioaa + ratioR;
+        if(sum > 0) { ratioAA/=sum; ratioAa/=sum; ratioaa/=sum; ratioR/=sum; }
+
+        let tAA = Math.round(maxVis * ratioAA);
+        let tAa = Math.round(maxVis * ratioAa);
+        let taa = Math.round(maxVis * ratioaa);
+        let tR = maxVis - tAA - tAa - taa; 
+
+        if(r === 0) { tR = 0; taa = maxVis - tAA - tAa; }
+
+        let curCounts = { AA:0, Aa:0, aa:0, R:0 };
+        slimes.forEach(s => { if(s.state !== 'dying') curCounts[s.type]++; });
+
+        let soundPlayed = { b: false, d: false };
+
+        ['AA', 'Aa', 'aa', 'R'].forEach(type => {
+            let target = type==='AA'?tAA : type==='Aa'?tAa : type==='aa'?taa : tR;
+            let diff = curCounts[type] - target;
+            if(diff > 0) {
+                let eligibles = slimes.filter(s => s.type === type && s.state !== 'dying');
+                for(let i=0; i<diff; i++) {
+                    if(eligibles[i]) {
+                        eligibles[i].state = 'dying';
+                        icons.push(new Icon('👻', eligibles[i].x, eligibles[i].y, 'white'));
+                        if(!soundPlayed.d && currentSpeed > 500) { playSFX('death'); soundPlayed.d = true; } // ไม่ส่งเสียงถ้าเร่งความเร็ว
+                    }
+                }
+            } else if(diff < 0) {
+                for(let i=0; i<Math.abs(diff); i++) {
+                    slimes.push(new Slime(type));
+                    if(!soundPlayed.b && currentSpeed > 500) { playSFX('birth'); soundPlayed.b = true; }
+                }
+            }
+        });
+    }
+
+    function showAlert(msg) {
+        let box = document.getElementById('alertBox');
+        box.innerText = msg; box.style.display = 'block';
+        if(currentSpeed > 500) playSFX('alert');
+        setTimeout(() => box.style.display = 'none', 3000);
+    }
+
+    // ==========================================
+    // 4. Evolution Logic Core
+    // ==========================================
+    function stepGeneration() {
+        if(!isRunning) return;
+        gen++;
+
+        let alive = slimes.filter(s => s.state === 'alive');
+        for(let i=0; i<Math.floor(alive.length*0.1); i+=2) {
+            if(alive[i]) icons.push(new Icon('❤️', alive[i].x, alive[i].y, '#ff4757'));
+        }
+
+        function getSample(nTarget, prob) {
+            let hits = 0; for(let i=0; i<nTarget*2; i++) { if(Math.random()<prob) hits++; }
+            return hits / (nTarget*2);
+        }
+
+        switch(currentScen) {
+            case 1: q = getSample(2000, q); p = 1-q; r = 0; break;
+            case 2: 
+                let w_bar = (p*p*1) + (2*p*q*1) + (q*q*0.4);
+                p = ((p*p*1) + (p*q*1)) / w_bar; q = 1-p; break;
+            case 3: 
+                q = (q*(1-0.1)) + (1.0 * 0.1); p = 1-q; break;
+            case 4: 
+                if(gen === 5) { r = 0.10; p *= 0.90; q *= 0.90; showAlert("☢️ รุ่นที่ 5: เกิดประชากรกลายพันธุ์ชนิดใหม่ (สีเขียว)!"); }
+                if(gen > 5) {
+                    let tW = (p*1) + (q*1) + (r*1.8);
+                    p = (p*1)/tW; q = (q*1)/tW; r = (r*1.8)/tW;
+                }
+                break;
+            case 5: 
+                if(gen === 3) { N = 20; showAlert("🌪️ ภัยพิบัติ! ประชากรเหลือเพียง 20 ตัว"); document.getElementById('valN').innerText = N; }
+                q = getSample(N, q); p = 1-q; break;
+            case 6: 
+                let s_bar = (p*p*1.0) + (2*p*q*0.6) + (q*q*0.05);
+                p = ((p*p*1.0) + (p*q*0.6)) / s_bar; q = 1-p; break;
+        }
+
+        if(p<0) p=0; if(p>1) p=1; if(q<0) q=0; if(q>1) q=1; if(r<0) r=0; if(r>1) r=1;
+
+        document.getElementById('dispGen').innerText = gen;
+        document.getElementById('dispP').innerText = p.toFixed(2);
+        document.getElementById('dispQ').innerText = q.toFixed(2);
+        document.getElementById('dispR').innerText = r.toFixed(2);
+
+        // อัปเดตและเก็บข้อมูลจำนวนประชากร
+        let counts = updatePopulationCounts();
+
+        dataLog.gen.push(gen); dataLog.p.push(p); dataLog.q.push(q); dataLog.r.push(r); dataLog.n.push(N);
+        dataLog.cAA.push(counts.cAA); dataLog.cAa.push(counts.cAa); dataLog.caa.push(counts.caa); dataLog.cR.push(counts.cR);
+        
+        statChart.update(); syncVisuals();
+    }
+
+    function toggleSim() {
+        isRunning = !isRunning;
+        let btn = document.getElementById('playBtn');
+        if(isRunning) {
+            btn.innerHTML = '<i class="fas fa-pause"></i> หยุดชั่วคราว';
+            btn.style.background = '#e94560';
+            document.getElementById('initialN').disabled = true; 
+            
+            clearInterval(loopTimer);
+            loopTimer = setInterval(stepGeneration, currentSpeed);
+        } else {
+            btn.innerHTML = '<i class="fas fa-play"></i> ทำงานต่อ';
+            btn.style.background = 'var(--neon-green)';
+            clearInterval(loopTimer);
+        }
+    }
+
+    function resetSim() {
+        isRunning = false; clearInterval(loopTimer);
+        gen = 0; p = 0.5; q = 0.5; r = 0.0;
+        N = parseInt(document.getElementById('initialN').value);
+        document.getElementById('initialN').disabled = false;
+        
+        let initialCounts = updatePopulationCounts();
+        
+        dataLog.gen = [0]; dataLog.p = [0.5]; dataLog.q = [0.5]; dataLog.r = [0.0]; dataLog.n = [N];
+        dataLog.cAA = [initialCounts.cAA]; dataLog.cAa = [initialCounts.cAa]; dataLog.caa = [initialCounts.caa]; dataLog.cR = [initialCounts.cR];
+        slimes = []; icons = [];
+        
+        document.getElementById('dispGen').innerText = 0;
+        document.getElementById('dispP').innerText = "0.50";
+        document.getElementById('dispQ').innerText = "0.50";
+        document.getElementById('dispR').innerText = "0.00";
+        document.getElementById('valN').innerText = N;
+        document.getElementById('alertBox').style.display = 'none';
+
+        let btn = document.getElementById('playBtn');
+        btn.innerHTML = '<i class="fas fa-play"></i> เริ่มการจำลอง';
+        btn.style.background = 'var(--neon-green)';
+
+        statChart.data.labels = dataLog.gen;
+        statChart.data.datasets[0].data = dataLog.p;
+        statChart.data.datasets[1].data = dataLog.q;
+        statChart.data.datasets[2].data = dataLog.r;
+        statChart.update();
+
+        syncVisuals();
+    }
+
+    // ==========================================
+    // 5. ระบบ Export PDF 
+    // ==========================================
+    function exportData() {
+        if(gen === 0) { alert("กรุณารันการจำลองก่อนทำการ Export ครับ"); return; }
+        
+        let wasRunning = isRunning;
+        if(isRunning) toggleSim(); 
+        
+        let sName = document.getElementById('studentName').value.trim() || "- ไม่ระบุ -";
+        let sNote = document.getElementById('studentNote').value.trim() || "- ไม่ระบุสรุปผล -";
+        
+        let rawTitle = document.getElementById('infoTitle').innerText;
+        document.getElementById('pdfTitle').innerHTML = "สถานการณ์: " + rawTitle;
+        document.getElementById('pdfStudentName').innerText = "ชื่อ-สกุล: " + sName;
+        document.getElementById('pdfStudentNote').innerText = "สรุปผลการทดลอง: " + sNote;
+
+        let tbody = document.getElementById('pdfTableBody');
+        tbody.innerHTML = "";
+        
+        for(let i=0; i<dataLog.gen.length; i++) {
+            let tr = `<tr>
+                <td style="padding: 5px; border: 1px solid #ddd;">${dataLog.gen[i]}</td>
+                <td style="color:#e84393; padding: 5px; border: 1px solid #ddd;">${dataLog.p[i].toFixed(2)}</td>
+                <td style="color:#0984e3; padding: 5px; border: 1px solid #ddd;">${dataLog.q[i].toFixed(2)}</td>
+                <td style="color:#00b894; padding: 5px; border: 1px solid #ddd;">${dataLog.r[i].toFixed(2)}</td>
+                <td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">${dataLog.n[i]}</td>
+                <td style="color:#e84393; padding: 5px; border: 1px solid #ddd;">${dataLog.cAA[i]}</td>
+                <td style="color:#9b5de5; padding: 5px; border: 1px solid #ddd;">${dataLog.cAa[i]}</td>
+                <td style="color:#0984e3; padding: 5px; border: 1px solid #ddd;">${dataLog.caa[i]}</td>
+                <td style="color:#00b894; padding: 5px; border: 1px solid #ddd;">${dataLog.cR[i]}</td>
+            </tr>`;
+            tbody.innerHTML += tr;
+        }
+
+        let imgChart = document.getElementById('statChart').toDataURL("image/png");
+        document.getElementById('pdfImages').innerHTML = `<img src="${imgChart}" style="width:90%; border-radius:10px; margin-bottom:15px; border:1px solid #ccc;">`;
+
+        let element = document.getElementById('pdfContent');
+        element.parentElement.style.display = 'block'; 
+
+        html2pdf().from(element).set({
+            margin: 10, filename: `Evolution_Lab_${sName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+            html2canvas: { scale: 2 }, jsPDF: { format: 'a4', orientation: 'portrait' }
+        }).save().then(() => {
+            element.parentElement.style.display = 'none'; 
+            if(wasRunning) toggleSim();
+        });
+    }
+
+    function animate() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        slimes = slimes.filter(s => { s.update(); s.draw(); return !(s.state==='dying' && s.scale<=0); });
+        icons = icons.filter(i => { i.draw(); return i.timer>0; });
+        requestAnimationFrame(animate);
+    }
+
+    N = parseInt(document.getElementById('initialN').value);
+    resetSim(); 
+    animate();
+
+</script>
+</body>
+</html>
