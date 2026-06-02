@@ -650,5 +650,268 @@
     animate();
 
 </script>
+<style>
+        .quiz-container { background: var(--panel-bg); padding: 20px; border-radius: 15px; border: 1px solid var(--neon-blue); margin-top: 20px; color: white; margin-bottom: 30px; }
+        .quiz-header { color: var(--neon-blue); border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;}
+        .quiz-question { margin-bottom: 15px; font-size: 1.1rem; color: var(--neon-yellow); line-height: 1.4;}
+        .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+        .quiz-option { background: #222230; border: 1px solid #444; padding: 12px; border-radius: 8px; cursor: pointer; color: white; text-align: left; transition: 0.2s; font-family: 'Prompt', sans-serif; font-size: 0.95rem; line-height: 1.4;}
+        .quiz-option:hover { background: rgba(0, 187, 249, 0.2); }
+        .quiz-option.selected { background: var(--neon-blue); color: black; border-color: var(--neon-blue); font-weight: bold; }
+        .quiz-nav { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .quiz-btn { padding: 10px 20px; background: var(--neon-green); color: black; border: none; border-radius: 8px; font-family: 'Prompt', sans-serif; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+        .quiz-btn:hover:not(:disabled) { box-shadow: 0 0 10px rgba(0,245,212,0.5); }
+        .quiz-btn:disabled { background: #444; color: #888; cursor: not-allowed; box-shadow: none; }
+        
+        .student-info-quiz { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .student-info-quiz input { padding: 12px; border-radius: 8px; border: 1px solid #444; background: #222230; color: white; font-family: 'Prompt', sans-serif; font-size: 0.9rem; width: 100%; box-sizing: border-box; }
+        .student-info-quiz input:focus { outline: none; border-color: var(--neon-blue); }
+        
+        .section-title { font-size: 1.2rem; color: var(--neon-purple); margin-bottom: 15px; border-bottom: 1px dashed #444; padding-bottom: 10px; }
+        .feedback-msg { margin-top: 15px; padding: 10px; border-radius: 8px; font-weight: bold; display: none; text-align: center; }
+        .feedback-wrong { background: rgba(255, 71, 87, 0.2); color: #ff4757; border: 1px solid #ff4757; }
+        .feedback-correct { background: rgba(0, 245, 212, 0.2); color: var(--neon-green); border: 1px solid var(--neon-green); }
+
+        /* สไตล์หน้าสรุปผล (Summary Dashboard) */
+        .summary-header { display: flex; justify-content: space-between; align-items: center; background: rgba(0, 187, 249, 0.1); padding: 20px; border-radius: 12px; border: 1px solid var(--neon-blue); margin-bottom: 20px; }
+        .summary-student { font-size: 1.1rem; color: white; }
+        .summary-student span { color: var(--neon-green); font-weight: bold; }
+        .summary-score-box { text-align: center; background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 10px; border: 1px solid var(--neon-yellow); }
+        .summary-score-val { font-size: 2rem; color: var(--neon-yellow); font-weight: bold; }
+        
+        .summary-section { background: #222230; padding: 20px; border-radius: 12px; border: 1px solid #444; margin-bottom: 20px; }
+        .summary-section h4 { margin: 0 0 15px 0; color: var(--neon-purple); border-bottom: 1px solid #444; padding-bottom: 10px; font-size: 1.1rem; }
+        
+        .summary-item { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #444; }
+        .summary-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .summary-q { font-weight: bold; color: #ccc; margin-bottom: 5px; }
+        .summary-a { color: var(--neon-green); font-size: 0.95rem; }
+        .summary-a.wrong { color: #ff4757; }
+        .summary-exp { font-size: 0.85rem; color: #888; margin-top: 5px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; }
+    </style>
+
+    <div class="container">
+        <div class="quiz-container" style="grid-column: 1 / -1;" id="evaluationApp">
+            
+            <div id="studentSetup">
+                <div class="quiz-header"><i class="fas fa-user-graduate" style="font-size: 1.5rem;"></i><h3 style="margin: 0;">ประเมินผลการเรียนรู้ (Evolution Lab)</h3></div>
+                <div style="margin-bottom: 10px; color: #aaa; font-size: 0.9rem;">กรอกข้อมูลเพื่อเริ่มต้นทำกิจกรรม</div>
+                <div class="student-info-quiz">
+                    <input type="text" id="qName" placeholder="👤 ชื่อ-นามสกุล">
+                    <input type="text" id="qClass" placeholder="🏫 ชั้น (เช่น ม.4/1)">
+                    <input type="text" id="qNo" placeholder="🔢 เลขที่">
+                </div>
+                <button class="quiz-btn" onclick="startDiscussion()" style="width: 100%; justify-content: center;">เริ่มกิจกรรมอภิปรายผล <i class="fas fa-arrow-right"></i></button>
+            </div>
+
+            <div id="discussionSection" style="display: none;">
+                <div class="section-title"><i class="fas fa-comments"></i> ตอนที่ 1: อภิปรายผลจากการทดลอง</div>
+                <p style="color: #ccc; font-size: 0.9rem; margin-top: 0;">*ทดลองรันการจำลองในแต่ละสถานการณ์เพื่อหาคำตอบ หากตอบผิดให้กลับไปรันใหม่อีกครั้ง</p>
+                
+                <h4 id="discText" class="quiz-question">คำถามอภิปราย</h4>
+                <div id="discOpts" class="quiz-options"></div>
+                
+                <div id="discFeedback" class="feedback-msg"></div>
+
+                <div class="quiz-nav">
+                    <span id="discProgress" style="color: #aaa; font-size: 0.9rem;">ข้อ 1 / 6</span>
+                    <button class="quiz-btn" id="checkDiscBtn" onclick="checkDiscussion()">ตรวจคำตอบ</button>
+                    <button class="quiz-btn" id="nextDiscBtn" onclick="nextDiscussion()" style="display: none; background: var(--neon-blue);">ข้อถัดไป <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </div>
+
+            <div id="quizQnA" style="display: none;">
+                <div class="section-title" style="color: var(--neon-yellow); border-bottom-color: #555;"><i class="fas fa-clipboard-check"></i> ตอนที่ 2: แบบทดสอบประเมินความเข้าใจ</div>
+                
+                <h4 id="qText" class="quiz-question">คำถามแบบทดสอบ</h4>
+                <div id="qOpts" class="quiz-options"></div>
+                
+                <div class="quiz-nav">
+                    <span id="quizProgress" style="color: #aaa; font-size: 0.9rem;">ข้อ 1 / 5</span>
+                    <button class="quiz-btn" id="nextQuizBtn" onclick="nextQuestion()" disabled>บันทึกคำตอบและไปข้อถัดไป</button>
+                </div>
+            </div>
+
+            <div id="quizResult" style="display: none;">
+                <h3 style="color: var(--neon-green); text-align: center; margin-top: 0; font-size: 1.5rem;"><i class="fas fa-check-circle"></i> เสร็จสิ้นกิจกรรม</h3>
+                
+                <div class="summary-header">
+                    <div class="summary-student">
+                        <div style="margin-bottom: 5px;">ชื่อ-นามสกุล: <span id="sumName"></span></div>
+                        <div>ชั้น: <span id="sumClass"></span> | เลขที่: <span id="sumNo"></span></div>
+                    </div>
+                    <div class="summary-score-box">
+                        <div style="font-size: 0.9rem; color: #ccc;">คะแนนแบบทดสอบ</div>
+                        <div class="summary-score-val"><span id="sumScore">0</span> / 5</div>
+                    </div>
+                </div>
+
+                <div class="summary-section">
+                    <h4><i class="fas fa-comments"></i> สรุปผลการอภิปราย (ตอนที่ 1)</h4>
+                    <div id="sumDiscArea"></div>
+                </div>
+
+                <div class="summary-section" style="border-color: #555;">
+                    <h4 style="color: var(--neon-yellow);"><i class="fas fa-clipboard-check"></i> เฉลยแบบทดสอบ (ตอนที่ 2)</h4>
+                    <div id="sumQuizArea"></div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="quiz-btn" onclick="location.reload()" style="background: #444; color: white; display: inline-flex;"><i class="fas fa-redo"></i> เริ่มกิจกรรมใหม่ทั้งหมด</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const discData = [
+            { q: "1. ลองรัน 'สถานการณ์ที่ 1 (สมดุล HWE)' สังเกตค่าความถี่แอลลีล (p และ q) ตลอดการจำลอง เป็นอย่างไร?", opts: ["เปลี่ยนแปลงตลอดเวลาแบบสุ่ม คาดเดาไม่ได้", "คงที่ ไม่มีการเปลี่ยนแปลงอย่างมีนัยสำคัญ", "แอลลีล p (สีชมพู) เพิ่มขึ้นเรื่อยๆ จนเต็มกระดาน"], ans: 1 },
+            { q: "2. เปลี่ยนไปรัน 'สถานการณ์ที่ 2 (การคัดเลือกโดยธรรมชาติ)' เมื่อสิ่งแวดล้อมทำให้ลักษณะ aa อ่อนแอ เกิดอะไรขึ้น?", opts: ["ความถี่แอลลีล a (q สีฟ้า) จะค่อยๆ ลดลง", "ความถี่แอลลีล A (p สีชมพู) จะค่อยๆ ลดลง", "ความถี่ p และ q ยังคงที่เหมือนเดิม"], ans: 0 },
+            { q: "3. ใน 'สถานการณ์ที่ 3 และ 4' ปัจจัยอย่างการอพยพถ่ายเทยีนและการกลายพันธุ์ ส่งผลต่อประชากรอย่างไร?", opts: ["ทำให้ความถี่แอลลีลกลับมาสมดุลและคงที่มากขึ้น", "ทำให้เกิดการเปลี่ยนแปลงสัดส่วนอย่างฉับพลัน หรือเกิดแอลลีลชนิดใหม่", "ทำให้ประชากรสูญพันธุ์ทั้งหมดในทันที"], ans: 1 },
+            { q: "4. ใน 'สถานการณ์ที่ 5 (Genetic Drift)' ลองปรับประชากรเริ่มต้นลดเหลือ 20 ตัว กราฟเป็นอย่างไรเมื่อเทียบกับ 400 ตัว?", opts: ["กราฟความถี่แอลลีลผันผวนอย่างหนักแบบสุ่ม (เกิดการแกว่งตัวสูง)", "กราฟความถี่แอลลีลเป็นเส้นตรงคงที่ราบเรียบยิ่งขึ้น", "ไม่พบความแตกต่างระหว่าง 20 ตัว กับ 400 ตัว"], ans: 0 },
+            { q: "5. รัน 'สถานการณ์ที่ 6' การเลือกคู่ผสมพันธุ์แบบเจาะจง (Sexual Selection) ส่งผลอย่างไร?", opts: ["ส่งผล ทำให้แอลลีลที่ไม่ถูกเลือกค่อยๆ หายไปจากประชากร", "ไม่ส่งผล ความถี่แอลลีลยังคงที่"], ans: 0 },
+            { q: "🎯 6. (สรุป) จากสถานการณ์ 1-5 ประชากรจะอยู่ใน 'สมดุลฮาร์ดี-ไวน์เบิร์ก' (ความถี่แอลลีลคงที่) ได้ ต้องอยู่ภายใต้เงื่อนไขใดทั้งหมด?", opts: ["ประชากรขนาดเล็ก, มีการกลายพันธุ์ตลอด, เลือกคู่ผสมพันธุ์เจาะจง", "ประชากรขนาดใหญ่, ผสมพันธุ์แบบสุ่ม, ไม่กลายพันธุ์, ไม่อพยพ, ไม่มีการคัดเลือกโดยธรรมชาติ", "มีการอพยพตลอดเวลา, เกิดภัยพิบัติบ่อยครั้ง, ประชากรมีการปรับตัวสูง"], ans: 1 }
+        ];
+
+        const quizData = [
+            { q: "1. ภาวะสมดุลฮาร์ดี-ไวน์เบิร์ก (Hardy-Weinberg Equilibrium) จะเกิดขึ้นได้ภายใต้เงื่อนไขใด?", opts: ["ประชากรมีขนาดเล็ก", "มีการกลายพันธุ์เกิดขึ้นตลอดเวลา", "ไม่มีการอพยพเข้าหรือออก", "มีการคัดเลือกโดยธรรมชาติอย่างรุนแรง"], ans: 2, exp: "สมดุลฮาร์ดี-ไวน์เบิร์กต้องการประชากรขนาดใหญ่ ไม่มีการอพยพ ไม่มีการกลายพันธุ์ ไม่มีการคัดเลือก และมีการผสมพันธุ์แบบสุ่ม" },
+            { q: "2. หากนกนักล่าจับเฉพาะแมลงที่มีปีกสีสว่าง (aa) กินได้ง่ายกว่า จะส่งผลต่อความถี่แอลลีลอย่างไร?", opts: ["ความถี่แอลลีล a (q) จะเพิ่มขึ้น", "ความถี่แอลลีล a (q) จะลดลง", "ความถี่แอลลีล p และ q จะเท่าเดิม", "ประชากรทั้งหมดจะสูญพันธุ์ทันที"], ans: 1, exp: "เป็นการคัดเลือกโดยธรรมชาติ ลักษณะด้อย (aa) ที่ถูกกินจะตายก่อนสืบพันธุ์ ทำให้ความถี่แอลลีล a ลดลง" },
+            { q: "3. กระบวนการใดที่เป็นจุดกำเนิดทำให้เกิด 'แอลลีลชนิดใหม่' ขึ้นในประชากร?", opts: ["การถ่ายเทยีน (Gene Flow)", "การคัดเลือกโดยธรรมชาติ (Natural Selection)", "การกลายพันธุ์ (Mutation)", "Genetic Drift"], ans: 2, exp: "การกลายพันธุ์ (Mutation) คือการเปลี่ยนแปลงระดับ DNA ซึ่งเป็นจุดเริ่มต้นของแอลลีลใหม่" },
+            { q: "4. ปรากฏการณ์คอขวด (Bottleneck Effect) มักส่งผลกระทบอย่างรุนแรงต่อประชากรในลักษณะใด?", opts: ["ประชากรขนาดใหญ่และมีความหลากหลายสูง", "ประชากรที่เกิดใหม่จากการผสมข้ามสายพันธุ์", "ประชากรขนาดเล็กที่เหลือรอดจากภัยพิบัติ", "ประชากรที่มีการอพยพย้ายถิ่นฐานตลอดเวลา"], ans: 2, exp: "ปรากฏการณ์คอขวดทำให้ประชากรลดจำนวนลงอย่างรวดเร็ว เกิด Genetic Drift ได้ง่าย" },
+            { q: "5. การเลือกคู่ผสมพันธุ์แบบเจาะจงลักษณะ (Sexual Selection) ส่งผลต่อสมดุลประชากรอย่างไร?", opts: ["ทำให้ความถี่แอลลีลคงที่", "ทำให้แอลลีลที่ไม่ถูกเลือกค่อยๆ ลดจำนวนลง", "ทำให้เกิดการถ่ายเทยีนข้ามกลุ่ม", "ทำให้เกิดการกลายพันธุ์พร้อมกันทั้งหมด"], ans: 1, exp: "แอลลีลที่เป็นที่ต้องการจะมีโอกาสถ่ายทอดมากกว่า แอลลีลที่ไม่ถูกเลือกจะลดจำนวนลง" }
+        ];
+
+        let currDisc = 0, selectedDiscOpt = -1, currQuiz = 0, qScore = 0, userAnswers = [];
+
+        function startDiscussion() {
+            const nm = document.getElementById('qName').value.trim();
+            if(!nm) { alert("กรุณากรอกชื่อ-นามสกุลก่อนเริ่มกิจกรรมครับ"); document.getElementById('qName').focus(); return; }
+            document.getElementById('studentSetup').style.display = 'none';
+            document.getElementById('discussionSection').style.display = 'block';
+            loadDiscussion();
+        }
+
+        function loadDiscussion() {
+            const obj = discData[currDisc];
+            document.getElementById('discText').innerText = obj.q;
+            document.getElementById('discProgress').innerText = `ข้อ ${currDisc + 1} / 6`;
+            const optsDiv = document.getElementById('discOpts');
+            optsDiv.innerHTML = ''; selectedDiscOpt = -1;
+
+            obj.opts.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option'; btn.innerText = opt;
+                btn.onclick = () => {
+                    document.querySelectorAll('#discOpts .quiz-option').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected'); selectedDiscOpt = idx;
+                    document.getElementById('checkDiscBtn').disabled = false;
+                };
+                optsDiv.appendChild(btn);
+            });
+            document.getElementById('checkDiscBtn').style.display = 'inline-block';
+            document.getElementById('checkDiscBtn').disabled = true;
+            document.getElementById('nextDiscBtn').style.display = 'none';
+            document.getElementById('discFeedback').style.display = 'none';
+        }
+
+        function checkDiscussion() {
+            if(selectedDiscOpt === -1) return;
+            const obj = discData[currDisc];
+            const feedback = document.getElementById('discFeedback');
+            if(selectedDiscOpt === obj.ans) {
+                feedback.innerHTML = '<i class="fas fa-check-circle"></i> ถูกต้องครับ! ข้อสรุปนี้ถูกต้อง';
+                feedback.className = 'feedback-msg feedback-correct';
+                document.getElementById('checkDiscBtn').style.display = 'none';
+                document.getElementById('nextDiscBtn').style.display = 'inline-block';
+                document.querySelectorAll('#discOpts .quiz-option').forEach(b => b.disabled = true);
+                if(currDisc === discData.length - 1) document.getElementById('nextDiscBtn').innerText = 'บันทึกและไปทำแบบทดสอบ';
+            } else {
+                feedback.innerHTML = '<i class="fas fa-times-circle"></i> ยังไม่ถูกต้อง... ลองไปเปิดรันสถานการณ์การจำลองข้อนี้อีกครั้ง สังเกตผลแล้วมาตอบใหม่นะครับ';
+                feedback.className = 'feedback-msg feedback-wrong';
+            }
+            feedback.style.display = 'block';
+        }
+
+        function nextDiscussion() {
+            currDisc++;
+            if(currDisc < discData.length) { loadDiscussion(); } 
+            else {
+                document.getElementById('discussionSection').style.display = 'none';
+                document.getElementById('quizQnA').style.display = 'block';
+                loadQuiz();
+            }
+        }
+
+        function loadQuiz() {
+            const qObj = quizData[currQuiz];
+            document.getElementById('qText').innerText = qObj.q;
+            document.getElementById('quizProgress').innerText = `ข้อ ${currQuiz + 1} / 5`;
+            const optsDiv = document.getElementById('qOpts');
+            optsDiv.innerHTML = '';
+            
+            qObj.opts.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option'; btn.innerText = opt;
+                btn.onclick = () => {
+                    document.querySelectorAll('#qOpts .quiz-option').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected'); userAnswers[currQuiz] = index;
+                    document.getElementById('nextQuizBtn').disabled = false;
+                };
+                optsDiv.appendChild(btn);
+            });
+            document.getElementById('nextQuizBtn').innerText = currQuiz === quizData.length - 1 ? 'ส่งคำตอบแบบทดสอบ' : 'บันทึกคำตอบและไปข้อถัดไป';
+            document.getElementById('nextQuizBtn').disabled = true; 
+        }
+
+        function nextQuestion() {
+            if (userAnswers[currQuiz] === quizData[currQuiz].ans) qScore++;
+            currQuiz++;
+            if (currQuiz < quizData.length) { loadQuiz(); } 
+            else { showFinalResult(); }
+        }
+
+        function showFinalResult() {
+            document.getElementById('quizQnA').style.display = 'none';
+            document.getElementById('quizResult').style.display = 'block';
+            
+            // แสดงข้อมูลผู้เรียนและคะแนน
+            document.getElementById('sumName').innerText = document.getElementById('qName').value.trim();
+            document.getElementById('sumClass').innerText = document.getElementById('qClass').value.trim() || "-";
+            document.getElementById('sumNo').innerText = document.getElementById('qNo').value.trim() || "-";
+            document.getElementById('sumScore').innerText = qScore;
+
+            // สร้างรายการอภิปรายผล (ดึงเฉพาะคำตอบที่ถูกมาสรุป)
+            const sumDiscArea = document.getElementById('sumDiscArea');
+            sumDiscArea.innerHTML = '';
+            discData.forEach((dObj, i) => {
+                sumDiscArea.innerHTML += `
+                    <div class="summary-item">
+                        <div class="summary-q">${dObj.q}</div>
+                        <div class="summary-a"><i class="fas fa-check"></i> ${dObj.opts[dObj.ans]}</div>
+                    </div>
+                `;
+            });
+
+            // สร้างรายการเฉลยแบบทดสอบ
+            const sumQuizArea = document.getElementById('sumQuizArea');
+            sumQuizArea.innerHTML = '';
+            quizData.forEach((qObj, i) => {
+                const isCorrect = userAnswers[i] === qObj.ans;
+                const userAnsText = qObj.opts[userAnswers[i]];
+                const correctAnsText = qObj.opts[qObj.ans];
+                const statusClass = isCorrect ? 'summary-a' : 'summary-a wrong';
+                const statusIcon = isCorrect ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+                
+                sumQuizArea.innerHTML += `
+                    <div class="summary-item">
+                        <div class="summary-q">${qObj.q}</div>
+                        <div class="${statusClass}">${statusIcon} คุณตอบ: ${userAnsText}</div>
+                        ${!isCorrect ? `<div class="summary-a" style="margin-top: 5px;"><i class="fas fa-check-circle"></i> เฉลย: ${correctAnsText}</div>` : ''}
+                        <div class="summary-exp">💡 อธิบาย: ${qObj.exp}</div>
+                    </div>
+                `;
+            });
+        }
+    </script>
 </body>
 </html>
